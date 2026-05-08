@@ -9,8 +9,8 @@ export interface NationRef {
 
 export interface FinalPlayer {
   name: string;
-  goals?: number;        // gols marcados pelo jogador na final
-  ownGoal?: boolean;     // true se foi gol contra
+  goals?: number;        // gols regulares marcados PARA a própria seleção
+  ownGoals?: number;     // gols contra (contam para a seleção ADVERSÁRIA)
 }
 
 export interface FinalLineup {
@@ -1158,7 +1158,7 @@ export const finalLineupsByYear: Record<number, FinalLineup> = {
         { name: 'Luka Modrić' },
         { name: 'Ivan Rakitić' },
         { name: 'Ante Rebić' },
-        { name: 'Mario Mandžukić', goals: 1, ownGoal: true },
+        { name: 'Mario Mandžukić', goals: 1, ownGoals: 1 },
         { name: 'Ivan Perišić', goals: 1 },
       ],
     },

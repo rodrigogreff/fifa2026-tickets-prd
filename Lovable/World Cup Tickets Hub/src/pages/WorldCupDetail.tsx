@@ -309,7 +309,24 @@ const WorldCupDetail: React.FC = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {[finalLineup.home, finalLineup.away].map((side, sideIdx) => {
-                      const isWinner = sideIdx === 0; // home é sempre o vencedor nos meus dados
+                      const opponent = sideIdx === 0 ? finalLineup.away : finalLineup.home;
+                      const isWinner = sideIdx === 0; // home é sempre o vencedor nos dados
+
+                      // Constrói lista cronológica simbólica de gols PARA esta seleção:
+                      // - gols regulares dos próprios jogadores
+                      // - gols contra dos jogadores adversários
+                      const goalEvents: { name: string; ownGoal?: boolean }[] = [];
+                      side.players.forEach((p) => {
+                        for (let i = 0; i < (p.goals || 0); i++) {
+                          goalEvents.push({ name: p.name });
+                        }
+                      });
+                      opponent.players.forEach((p) => {
+                        for (let i = 0; i < (p.ownGoals || 0); i++) {
+                          goalEvents.push({ name: p.name, ownGoal: true });
+                        }
+                      });
+
                       return (
                         <div
                           key={side.team}
@@ -337,48 +354,100 @@ const WorldCupDetail: React.FC = () => {
                               )}
                             </div>
                           </div>
-                          <ol className="space-y-1.5 text-sm">
-                            {side.players.map((p, i) => (
-                              <li
-                                key={p.name}
-                                className="flex items-center gap-2 py-1"
-                              >
-                                <span className="font-mono text-xs text-muted-foreground w-5 text-right flex-shrink-0">
-                                  {i + 1}.
+
+                          {/* Gols da seleção — lista todos os eventos que somam o placar */}
+                          {goalEvents.length > 0 && (
+                            <div className="mb-3 p-3 rounded-lg bg-secondary/40 border border-border/50">
+                              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                                <span aria-hidden>⚽</span>
+                                <span>
+                                  Gols ({goalEvents.length})
                                 </span>
-                                <span className="flex-1">
-                                  {p.name}
-                                  {p.ownGoal && (
-                                    <span className="text-xs text-muted-foreground ml-1">
-                                      (gol contra)
+                              </div>
+                              <ul className="space-y-1 text-sm">
+                                {goalEvents.map((g, i) => (
+                                  <li key={`${g.name}-${i}`} className="flex items-center gap-2">
+                                    <span aria-hidden className="text-base leading-none">⚽</span>
+                                    <span className="flex-1">
+                                      {g.name}
+                                      {g.ownGoal && (
+                                        <span className="text-xs text-muted-foreground ml-1">
+                                          (gol contra)
+                                        </span>
+                                      )}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {/* Escalação */}
+                          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+                            Escalação titular
+                          </div>
+                          <ol className="space-y-1.5 text-sm">
+                            {side.players.map((p, i) => {
+                              const totalBalls = (p.goals || 0) + (p.ownGoals || 0);
+                              return (
+                                <li
+                                  key={p.name}
+                                  className="flex items-center gap-2 py-1"
+                                >
+                                  <span className="font-mono text-xs text-muted-foreground w-5 text-right flex-shrink-0">
+                                    {i + 1}.
+                                  </span>
+                                  <span className="flex-1">
+                                    {p.name}
+                                    {p.ownGoals && p.ownGoals > 0 && (
+                                      <span className="text-xs text-muted-foreground ml-1">
+                                        (1 gol contra)
+                                      </span>
+                                    )}
+                                  </span>
+                                  {totalBalls > 0 && (
+                                    <span className="flex items-center gap-0.5">
+                                      {Array.from({ length: p.goals || 0 }).map((_, gIdx) => (
+                                        <span
+                                          key={`g-${gIdx}`}
+                                          className="text-base leading-none"
+                                          title="Gol marcado para a própria seleção"
+                                          aria-label="Gol"
+                                          role="img"
+                                        >
+                                          ⚽
+                                        </span>
+                                      ))}
+                                      {Array.from({ length: p.ownGoals || 0 }).map((_, gIdx) => (
+                                        <span
+                                          key={`og-${gIdx}`}
+                                          className="text-base leading-none opacity-50"
+                                          title="Gol contra (conta para a seleção adversária)"
+                                          aria-label="Gol contra"
+                                          role="img"
+                                        >
+                                          ⚽
+                                        </span>
+                                      ))}
                                     </span>
                                   )}
-                                </span>
-                                {p.goals && p.goals > 0 && (
-                                  <span className="flex items-center gap-0.5">
-                                    {Array.from({ length: p.goals }).map((_, gIdx) => (
-                                      <span
-                                        key={gIdx}
-                                        className="text-base leading-none"
-                                        title={`Gol${p.goals! > 1 ? ` ${gIdx + 1}` : ''}${p.ownGoal ? ' contra' : ''}`}
-                                        aria-label="Gol marcado"
-                                        role="img"
-                                      >
-                                        ⚽
-                                      </span>
-                                    ))}
-                                  </span>
-                                )}
-                              </li>
-                            ))}
+                                </li>
+                              );
+                            })}
                           </ol>
                         </div>
                       );
                     })}
                   </div>
-                  <div className="mt-4 text-xs text-muted-foreground flex items-center gap-2">
-                    <span aria-hidden>⚽</span>
-                    <span>Bola ao lado do nome indica gol marcado pelo jogador na final</span>
+                  <div className="mt-4 text-xs text-muted-foreground flex items-center gap-3 flex-wrap">
+                    <span className="flex items-center gap-1">
+                      <span aria-hidden>⚽</span>
+                      <span>= gol marcado para a própria seleção</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span aria-hidden className="opacity-50">⚽</span>
+                      <span>= gol contra (conta para o adversário)</span>
+                    </span>
                   </div>
                 </CardContent>
               </Card>
